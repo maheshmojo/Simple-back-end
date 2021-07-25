@@ -2,7 +2,7 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql-standalone/test
+    url: jdbc:mysql://mysql-standalone/test?allowPublicKeyRetrieval=true&useSSL=false
     username: testuser
     password: testuser@123
     hikari:
