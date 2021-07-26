@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Sonar Scanner'){
              steps{
-                 //To run code quality gate for maven build
+                 //To run code quality gate for maven build -test
                  bat "mvn sonar:sonar -Dsonar.projectKey=Simple-Back-End-DEV-Node -Dsonar.host.url=http://localhost:9092 -Dsonar.login=df583383dfc969fc2ae125ad906df17d43a06bf7"
              }
         }
