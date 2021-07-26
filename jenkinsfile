@@ -21,12 +21,12 @@ pipeline {
                 bat "mvn -Dmaven.test.failure.ignore=true clean package"
             }
         }
-        // stage('Sonar Scanner'){
-        //     steps{
-        //         //To run code quality gate for maven build
-        //         bat "mvn sonar:sonar -Dsonar.projectKey=Test-Backend -Dsonar.host.url=http://localhost:9092 -Dsonar.login=021e315ea00e3cb734b0b6ec3c97850988639be3"
-        //     }
-        // }
+        stage('Sonar Scanner'){
+             steps{
+                 //To run code quality gate for maven build
+                 bat "mvn sonar:sonar -Dsonar.projectKey=Simple-Back-End-DEV-Node -Dsonar.host.url=http://localhost:9092 -Dsonar.login=df583383dfc969fc2ae125ad906df17d43a06bf7"
+             }
+        }
         
         stage('Build Dockerimage') {
             steps {
