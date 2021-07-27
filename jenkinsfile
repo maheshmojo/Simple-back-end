@@ -17,16 +17,16 @@ pipeline {
         }
         stage('Build'){
             steps{
-                // To run Maven on a Windows agent, use
+                // To run Maven on a Windows agent, use -test
                 bat "mvn -Dmaven.test.failure.ignore=true clean package"
             }
         }
-        stage('Sonar Scanner'){
-             steps{
-                 //To run code quality gate for maven build -test
-                 bat "mvn sonar:sonar -Dsonar.projectKey=Simple-Back-End-DEV-Node -Dsonar.host.url=http://localhost:9092 -Dsonar.login=df583383dfc969fc2ae125ad906df17d43a06bf7"
-             }
-        }
+        //stage('Sonar Scanner'){
+        //     steps{
+        //         //To run code quality gate for maven build
+        //         bat "mvn sonar:sonar -Dsonar.projectKey=Simple-Back-End-DEV-Node -Dsonar.host.url=http://localhost:9092 -Dsonar.login=df583383dfc969fc2ae125ad906df17d43a06bf7"
+        //     }
+        //}
         
         stage('Build Dockerimage') {
             steps {
@@ -38,7 +38,7 @@ pipeline {
         stage('Tag Dockerimage') {
             steps {
                 
-              bat "docker tag simple-back-end 192.168.33.10:8123/back-end:master${env.BUILD_ID}"
+              bat "docker tag simple-back-end 192.168.33.10:8123/back-end:${env.BUILD_ID}"
             
             }       
             
@@ -48,23 +48,23 @@ pipeline {
             steps {
                 
               bat"docker login -u docker -p admin@123 192.168.33.10:8123"
-              bat "docker push 192.168.33.10:8123/back-end:master${env.BUILD_ID}"  
+              bat "docker push 192.168.33.10:8123/back-end:${env.BUILD_ID}"  
             }       
             
     
          }
          stage('Pull from docker and run'){
              agent{
-                 label 'Master-Production-Node'
+                 label 'DEVELOPMENT_SERVER'
              }
              steps{
                 sh """#!/bin/bash 
 				
 			    sudo docker container rm -f mysql-standalone
 				sudo docker container rm -f simple-back-end
-				sudo docker pull 192.168.33.10:8123/back-end:master${env.BUILD_ID}
+				sudo docker pull 192.168.33.10:8123/back-end:${env.BUILD_ID}
 				sudo docker container run --name mysql-standalone --network user-mysql -e MYSQL_ROOT_PASSWORD=admin123 -e MYSQL_DATABASE=test -e MYSQL_USER=testuser -e MYSQL_PASSWORD=testuser@123 -d mysql:latest
-				sudo docker container run -p 8081:8080 --name simple-back-end --network user-mysql -d 192.168.33.10:8123/back-end:master${env.BUILD_ID}
+				sudo docker container run -p 8081:8080 --name simple-back-end --network user-mysql -d 192.168.33.10:8123/back-end:${env.BUILD_ID}
 				
 				
 				""" 
