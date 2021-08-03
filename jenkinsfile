@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout SCM') {
             steps {
                 // Get some code from a GitHub repository
-                git branch: 'Master-main', url: 'https://github.com/maheshmojo/Simple-back-end.git'
+                git branch: 'DEV', url: 'https://github.com/maheshmojo/Simple-back-end.git'
             }
         }
         stage('Build'){
