@@ -1,74 +1,67 @@
 pipeline {
-    agent{
-            label 'master'
-    }
-   
-    tools {
-        // Install the Maven version configured as "M3" and add it to the path.
-        maven "M3"
-    }
+    agent none
 
     stages {
-        stage('Checkout SCM') {
-            steps {
-                // Get some code from a GitHub repository
-                git branch: 'Master-main', url: 'https://github.com/maheshmojo/Simple-back-end.git'
+        stage("Stage for Master-Production") {
+            agent {
+                label 'Master-Production'
+            }
+            tools {
+                // Install the Maven version configured as "M3" and add it to the path.
+                maven "M3"
+            }
+            stages {
+               stage("Checkout SCM For Master-Production") {
+                   steps {
+                       git branch: 'Master-main', url: 'https://github.com/maheshmojo/Simple-back-end.git'
+                      
+                   }
+               }
+               stage("Build") {
+                   steps {
+                        sh 'mvn -Dmaven.test.failure.ignore=true clean package'
+                        sh 'sudo docker build -t simple-back-end:${BUILD_ID} .'
+                   }
+               }
+               stage("Push to Docker Registry") {
+                   steps {
+                        sh 'sudo docker tag simple-back-end:${BUILD_ID} 192.168.33.10:8123/back-end:MASTER.${BUILD_ID}'
+                        sh 'sudo docker push 192.168.33.10:8123/back-end:MASTER.${BUILD_ID}'
+                      
+                   }
+               }
+               stage("Run the container") {
+                   steps {
+                      sh 'sudo docker container rm -f mysql-standalone'
+                      sh 'sudo docker container rm -f simple-back-end'
+                      sh 'sudo docker container run --name mysql-standalone --network user-mysql -e MYSQL_ROOT_PASSWORD=admin123 -e MYSQL_DATABASE=test -e MYSQL_USER=testuser -e MYSQL_PASSWORD=testuser@123 -d mysql:latest'
+                      sh 'sudo docker container run -p 8081:8080 --name simple-back-end --network user-mysql -d simple-back-end:${BUILD_ID}'
+                   }
+                }
             }
         }
-        stage('Build'){
-            steps{
-                // To run Maven on a Windows agent, use -test
-                bat "mvn -Dmaven.test.failure.ignore=true clean package"
+
+        stage("Stage for DEVELOPMENT_SERVER") {
+            agent {
+                label 'DEVELOPMENT_SERVER'
+            }
+            tools {
+                 // Install the Maven version configured as "M3" and add it to the path.
+                 maven "M3"
+            }
+            steps {
+                // Get the code from a GitHub repository
+                    git branch: 'DEV', url: 'https://github.com/maheshmojo/Simple-back-end.git'
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean package'
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=Test-Backend -Dsonar.host.url=http://localhost:9092 -Dsonar.login=d975865c9fa2ad6ed61357aacc5adf40122dde16'
+                    sh 'sudo docker build -t simple-back-end:${BUILD_ID} .'
+                    sh 'sudo docker tag simple-back-end:${BUILD_ID} 192.168.33.10:8123/back-end:DEV.${BUILD_ID}'
+                    sh 'sudo docker push 192.168.33.10:8123/back-end:DEV.${BUILD_ID}'
+                    sh 'sudo docker container rm -f mysql-standalone'
+                    sh 'sudo docker container rm -f simple-back-end'
+                    sh 'sudo docker container run --name mysql-standalone --network user-mysql -e MYSQL_ROOT_PASSWORD=admin123 -e MYSQL_DATABASE=test -e MYSQL_USER=testuser -e MYSQL_PASSWORD=testuser@123 -d mysql:latest'
+                    sh 'sudo docker container run -p 8081:8080 --name simple-back-end --network user-mysql -d simple-back-end:${BUILD_ID}'
             }
         }
-        //stage('Sonar Scanner'){
-        //     steps{
-        //         //To run code quality gate for maven build
-        //         bat "mvn sonar:sonar -Dsonar.projectKey=Simple-Back-End-DEV-Node -Dsonar.host.url=http://localhost:9092 -Dsonar.login=df583383dfc969fc2ae125ad906df17d43a06bf7"
-        //     }
-        //}
-        
-        stage('Build Dockerimage') {
-            steps {
-               bat "docker build --rm -t simple-back-end ."
-               
-               
-            }
-        }
-        stage('Tag Dockerimage') {
-            steps {
-                
-              bat "docker tag simple-back-end 192.168.33.10:8123/back-end:master${env.BUILD_ID}"
-            
-            }       
-            
-    
-         }
-         stage('Push Dockerimage') {
-            steps {
-                
-              bat"docker login -u docker -p admin@123 192.168.33.10:8123"
-              bat "docker push 192.168.33.10:8123/back-end:master${env.BUILD_ID}"  
-            }       
-            
-    
-         }
-         stage('Pull from docker and run'){
-             agent{
-                 label 'Master-Production-Node'
-             }
-             steps{
-                sh """#!/bin/bash 
-				
-			    sudo docker container rm -f mysql-standalone
-				sudo docker container rm -f simple-back-end
-				sudo docker pull 192.168.33.10:8123/back-end:${env.BUILD_ID}
-				sudo docker container run --name mysql-standalone --network user-mysql -e MYSQL_ROOT_PASSWORD=admin123 -e MYSQL_DATABASE=test -e MYSQL_USER=testuser -e MYSQL_PASSWORD=testuser@123 -d mysql:latest
-				sudo docker container run -p 8081:8080 --name simple-back-end --network user-mysql -d 192.168.33.10:8123/back-end:master${env.BUILD_ID}
-				
-				
-				""" 
-             }
-         }
     }
 }
