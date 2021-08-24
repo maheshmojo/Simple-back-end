@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SpringbootAngularDockerApplication {
 
 	public static void main(String[] args) {
+		/*hello*/
 		SpringApplication.run(SpringbootAngularDockerApplication.class, args);
 	}
 
